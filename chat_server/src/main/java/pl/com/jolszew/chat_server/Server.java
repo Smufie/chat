@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,11 +15,14 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author Jan
  * 
- * Server for my chat.
+ *         Server for my chat.
  *
  */
 public class Server {
 
+	static final String JDBC_DRIVER = "org.postgresql.Driver";
+	static final String DB_URL = "jdbc:postgresql://localhost:5432/jdbc";
+	static final String USER = "postgres";
 	private ArrayList<ServerThread> threads = new ArrayList<>();
 	private int threadID = 0;
 	final static Logger serverLogger = LogManager.getLogger(Server.class);
@@ -53,18 +60,35 @@ public class Server {
 		serverLogger.info("User " + senderNickname + " sent '" + messageToAll + "' to all users. ");
 	}
 
-	public void nameAlreadyExist(String nickname, int threadID) {
-		serverLogger.trace("Attempting to login by user " + nickname + ". Thread number: " + threadID + ".");
-		boolean isLoginSuccessful = true;
+	public void isLoginPossible(String nickname, int threadID) {
+		boolean isUserWithThatNameOnline = true;
+		boolean isUserOnServerDatabase = false;
 		for (int i = 0; i < threads.size(); i++) {
 			if (nickname.equals(threads.get(i).senderNickname)) {
 				threads.get(threadID).send("(error) User with this name is already connected. \n");
-				isLoginSuccessful = false;
+				isUserWithThatNameOnline = false;
 				serverLogger.warn("Logging by user " + nickname + " unsuccessful.");
 				break;
 			}
 		}
-		if (isLoginSuccessful) {
+		EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+		entityManager.clear();
+		Query query = entityManager.createQuery("SELECT c FROM ChatUsers c");
+		@SuppressWarnings("unchecked")
+		List<ChatUsers> list = query.getResultList();
+		for (ChatUsers l : list) {
+			if (nickname.equals(l.getUsername())) {
+				isUserOnServerDatabase = true;
+			}
+		}
+		entityManager.close();
+
+		if (!isUserOnServerDatabase) {
+			threads.get(threadID).send("(error) You're not signed in. \n");
+			serverLogger.warn("Logging by user " + nickname + " unsuccessful.");
+		}
+
+		if (isUserWithThatNameOnline && isUserOnServerDatabase) {
 			for (ServerThread thread : threads) {
 				threads.get(threadID).senderNickname = nickname;
 				thread.send("User '" + nickname + "' has logged in. \n");
@@ -97,7 +121,7 @@ public class Server {
 			if (senderNickname.equals(threads.get(i).senderNickname)) {
 				memory = i;
 			}
-			
+
 		}
 		if (!isReceiverOnline) {
 			threads.get(memory).send("User '" + nickname + "' is not online. \n");
@@ -110,7 +134,6 @@ public class Server {
 
 	public void sendAlert(String direct_message, String senderNickname) {
 		String nickname = direct_message.replace("\n", "");
-		serverLogger.trace("User " + senderNickname + " tries to alert user " + nickname + ". ");
 		int memory = 0;
 		boolean isReceiverOnline = false;
 		for (int i = 0; i < threads.size(); i++) {
@@ -145,11 +168,11 @@ public class Server {
 		serverLogger.trace("User " + senderNickname + " asked for commands. ");
 		for (int i = 0; i < threads.size(); i++) {
 			if (senderNickname.equals(threads.get(i).senderNickname)) {
-				threads.get(i).send("\n List of commands: \n"
-						+ "(/all) sends a message to all users \n"
-						+ "(/online) shows list of all users, that are currently online \n"
-						+ "(/priv nickname) sends direct message to user defined by nickname \n"
-						+ "(/alert nickname) alerts user defined by nickname \n");
+				threads.get(i)
+						.send("\n List of commands: \n" + "(/all) sends a message to all users \n"
+								+ "(/online) shows list of all users, that are currently online \n"
+								+ "(/priv nickname) sends direct message to user defined by nickname \n"
+								+ "(/alert nickname) alerts user defined by nickname \n");
 			}
 		}
 		serverLogger.info("User " + senderNickname + " received list of commands. ");
@@ -181,7 +204,66 @@ public class Server {
 
 	public void ignore(String senderNickname) {
 		serverLogger.info("User " + senderNickname + " sent empty message.");
-		
+
 	}
 
+	public void addUserToDatabase(String nickname, int threadID) {
+		serverLogger.info("Trying to add user " + nickname + ".");
+		boolean nameAlreadyExistsInDatabase = false;
+		ChatUsers chatUsers = new ChatUsers();
+		EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+		entityManager.clear();
+		Query query = entityManager.createQuery("SELECT c FROM ChatUsers c");
+		@SuppressWarnings("unchecked")
+		List<ChatUsers> list = query.getResultList();
+		for (ChatUsers l : list) {
+			if (nickname.equals(l.getUsername())) {
+				nameAlreadyExistsInDatabase = true;
+			}
+		}
+		if (nameAlreadyExistsInDatabase) {
+			threads.get(threadID).send("User " + nickname + " is already added to database. \n");
+			serverLogger.warn("User " + nickname + " is already added to database. ");
+		} else {
+			chatUsers.setNickname(nickname);
+			entityManager.getTransaction().begin();
+			entityManager.persist(chatUsers);
+			entityManager.getTransaction().commit();
+			threads.get(threadID).send("User " + nickname + " succesfully added to database. \n");
+			serverLogger.warn("User " + nickname + " succesfully added to database. ");
+
+		}
+		entityManager.close();
+	}
+
+	public void deleteUserFromDatabase(String nickname, int threadID) {
+		serverLogger.info("Trying to delete user " + nickname + ".");
+		boolean nameAlreadyExistsInDatabase = false;
+		int position = 0;
+		ChatUsers chatUsers = new ChatUsers();
+		EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+		entityManager.clear();
+		Query query = entityManager.createQuery("SELECT c FROM ChatUsers c");
+		@SuppressWarnings("unchecked")
+		List<ChatUsers> list = query.getResultList();
+		for (ChatUsers l : list) {
+			if (nickname.equals(l.getUsername())) {
+				nameAlreadyExistsInDatabase = true;
+				position = l.getId();
+			}
+		}
+		if (nameAlreadyExistsInDatabase) {
+			chatUsers = entityManager.find(chatUsers.getClass(), position);
+			entityManager.getTransaction().begin();
+			entityManager.remove(chatUsers);
+			entityManager.getTransaction().commit();
+			threads.get(threadID).send("User " + nickname + " succesfully deleted from database. \n");
+			serverLogger.warn("User " + nickname + " succesfully deleted from database. ");
+		} else {
+			threads.get(threadID).send("User " + nickname + " doesn't exist. \n");
+			serverLogger.warn("User " + nickname + " doesn't exist. ");
+		}
+		entityManager.close();
+		
+	}
 }

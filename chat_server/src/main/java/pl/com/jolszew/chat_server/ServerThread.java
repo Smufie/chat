@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 
+import pl.com.jolszew.chat_server.commandHandlers.AddCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.AlertCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.AllCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.CommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.CommandsCommandHandler;
+import pl.com.jolszew.chat_server.commandHandlers.DeleteCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.IgnoreCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.LoginCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.LogoutCommandHandler;
@@ -38,12 +40,14 @@ public class ServerThread extends Thread {
 	public void fillHashMapWithCommandHandlers() {
 		hmap.put("/login", new LoginCommandHandler());
 		hmap.put("/logout", new LogoutCommandHandler());
-		hmap.put("/alert", new AlertCommandHandler());
 		hmap.put("/all", new AllCommandHandler());
-		hmap.put("/online", new OnlineCommandHandler());
 		hmap.put("/priv", new PrivateCommandHandler());
+		hmap.put("/online", new OnlineCommandHandler());
 		hmap.put("/commands", new CommandsCommandHandler());
+		hmap.put("/alert", new AlertCommandHandler());
 		hmap.put("", new IgnoreCommandHandler());
+		hmap.put("/add", new AddCommandHandler());
+		hmap.put("/delete", new DeleteCommandHandler());
 	}
 	
 	
