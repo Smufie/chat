@@ -33,8 +33,10 @@ import net.miginfocom.swing.MigLayout;
 /**
  * @author jolszew
  * 
- * MyWindow class allows to connect to server, by using simple swing GUI. You can specify IP, port of the server and your nickname.
- * It also displays other users messages. Window contains few buttons and text areas.
+ *         MyWindow class allows to connect to server, by using simple swing
+ *         GUI. You can specify IP, port of the server and your nickname. It
+ *         also displays other users messages. Window contains few buttons and
+ *         text areas.
  * 
  * 
  *
@@ -114,104 +116,88 @@ public class MyWindow extends JFrame {
 
 			@Override
 			public void messageArrived(String newMessage) {
-				SwingUtilities.invokeLater(new Runnable() {
+				SwingUtilities.invokeLater(() -> {
 
-					@Override
-					public void run() {
-						if (newMessage.startsWith("(error)")) {
-							send_button.setEnabled(false);
-							message_field.setEditable(false);
-							logged = false;
-							login_and_logout_button.setText(" login ");
-							nickname_field.setEditable(true);
-						}
+					if (newMessage.startsWith("(error)")) {
+						send_button.setEnabled(false);
+						message_field.setEditable(false);
+						logged = false;
+						login_and_logout_button.setText(" login ");
+						nickname_field.setEditable(true);
+					}
 
-						if (newMessage.startsWith("(alert)")) {
-							Point currLocation = frame.getLocationOnScreen();
-							int iDisplaceXBy = 3;
-							int iDisplaceYBy = -3;
-							Point position1 = new Point(currLocation.x + iDisplaceXBy, currLocation.y + iDisplaceYBy);
-							Point position2 = new Point(currLocation.x - iDisplaceXBy, currLocation.y - iDisplaceYBy);
-							SwingUtilities.invokeLater(new Runnable() {
+					if (newMessage.startsWith("(alert)")) {
+						Point currLocation = frame.getLocationOnScreen();
+						int iDisplaceXBy = 3;
+						int iDisplaceYBy = -3;
+						Point position1 = new Point(currLocation.x + iDisplaceXBy, currLocation.y + iDisplaceYBy);
+						Point position2 = new Point(currLocation.x - iDisplaceXBy, currLocation.y - iDisplaceYBy);
+						SwingUtilities.invokeLater(() -> {
 
-								@Override
-								public void run() {
-									String alertName = "alercik.wav";
-									File mp3file = new File(alertName);
-									AudioInputStream audioInputStream = null;
-									try {
-										audioInputStream = AudioSystem.getAudioInputStream(mp3file.getAbsoluteFile());
-										Clip clip = null;
-										clip = AudioSystem.getClip();
-										clip.open(audioInputStream);
-										clip.start();
-									} catch (Exception e1) {
-										e1.printStackTrace();
-									}
+							String alertName = "alercik.wav";
+							File mp3file = new File(alertName);
+							AudioInputStream audioInputStream = null;
+							try {
+								audioInputStream = AudioSystem.getAudioInputStream(mp3file.getAbsoluteFile());
+								Clip clip = null;
+								clip = AudioSystem.getClip();
+								clip.open(audioInputStream);
+								clip.start();
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+
+						});
+
+						for (int i = 0; i < 5; i++) {
+
+							SwingUtilities.invokeLater(() -> {
+
+								frame.setLocation(position1);
+								try {
+									Thread.sleep(10);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
 								}
+								frame.setLocation(position2);
+								try {
+									Thread.sleep(10);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+
 							});
 
-							for (int i = 0; i < 5; i++) {
-
-								SwingUtilities.invokeLater(new Runnable() {
-
-									@Override
-									public void run() {
-										frame.setLocation(position1);
-										try {
-											Thread.sleep(10);
-										} catch (InterruptedException e) {
-											e.printStackTrace();
-										}
-										frame.setLocation(position2);
-										try {
-											Thread.sleep(10);
-										} catch (InterruptedException e) {
-											e.printStackTrace();
-										}
-									}
-								});
-
-							}
-							frame.setLocation(currLocation);
 						}
-
-						chat_area.append(newMessage);
+						frame.setLocation(currLocation);
 					}
+
+					chat_area.append(newMessage);
 				});
 			}
 
 			@Override
 			public void connectionEstablished() {
-				SwingUtilities.invokeLater(new Runnable() {
+				SwingUtilities.invokeLater(() -> {
 
-					@Override
-					public void run() {
-						chat_area.append("You have successfully connected to the server. \n");
-					}
+					chat_area.append("You have successfully connected to the server. \n");
 				});
 			}
 
 			@Override
 			public void connectionClosed() {
-				SwingUtilities.invokeLater(new Runnable() {
+				SwingUtilities.invokeLater(() -> {
 
-					@Override
-					public void run() {
-						chat_area.append("You have successfully disconnected from the server. \n");
-					}
+					chat_area.append("You have successfully disconnected from the server. \n");
 				});
 			}
 
 			@Override
 			public void error(String message) {
-				SwingUtilities.invokeLater(new Runnable() {
+				SwingUtilities.invokeLater(() -> {
 
-					@Override
-					public void run() {
-						send_button.setEnabled(false);
-						message_field.setEditable(false);
-					}
+					send_button.setEnabled(false);
+					message_field.setEditable(false);
 				});
 			}
 		});

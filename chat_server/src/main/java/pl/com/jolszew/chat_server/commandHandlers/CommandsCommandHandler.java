@@ -6,7 +6,7 @@ public class CommandsCommandHandler implements CommandHandler{
 
 	@Override
 	public void handleCommand(String message, ServerThread serverThread) {
-		serverThread.getServer().commadsRequest(serverThread.getSenderNickname());
+		serverThread.getServer().commandsRequest(serverThread.getSenderNickname());
 		
 	}
 

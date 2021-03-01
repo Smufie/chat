@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import pl.com.jolszew.chat_server.commandHandlers.AddCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.AlertCommandHandler;
 import pl.com.jolszew.chat_server.commandHandlers.AllCommandHandler;
@@ -27,7 +30,8 @@ public class ServerThread extends Thread {
 	private final int threadID;
 	protected String senderNickname;
 	private HashMap<String, CommandHandler> hmap = new HashMap<String, CommandHandler>();
-
+	final static Logger logger = LogManager.getLogger(ServerThread.class);
+	
 	public ServerThread(Server server, Socket socket, int threadID) {
 		this.server = server;
 		this.socket = socket;
@@ -70,9 +74,11 @@ public class ServerThread extends Thread {
 				}
 			}
 		} catch (IOException e1) {
-			e1.printStackTrace();
+			throw new RuntimeException(e1);
+			
 		} catch (Throwable e) {
-			e.printStackTrace();
+			
+			
 		}
 	}
 
